@@ -17,8 +17,8 @@ COPY sylius.ini /usr/local/etc/php/conf.d/sylius.ini
 RUN mv "${PHP_INI_DIR}/php.ini-production" "${PHP_INI_DIR}/php.ini"
 
 # Create Symfony project
-ARG APP_VERSION=1.11.3
-ARG SYMFONY_VERSION=5.4.7
+ARG APP_VERSION=1.11.4
+ARG SYMFONY_VERSION=5.4.8
 RUN wget -q https://github.com/symfony-cli/symfony-cli/releases/download/v${SYMFONY_VERSION}/symfony-cli_${SYMFONY_VERSION}_x86_64.apk -O /tmp/symfony.apk && \
     apk add --allow-untrusted /tmp/symfony.apk && \
     rm -rf /tmp/symfony.apk && \
