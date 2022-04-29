@@ -1,6 +1,6 @@
 services:
   app:
-    image: docker.io/procsiab/sylius:v1.0-amd64
+    image: docker.io/procsiab/sylius:v1.2-amd64
     volumes:
       - ./app:/var/www/html/app:Z
     ports:

@@ -6,7 +6,7 @@ mkdir app data
 # Change the owner of the data folder to mariadb UID
 podman unshare chown 999:999 data
 # Copy the application project from the container folder
-podman run -d --name sylius-app-copy-files docker.io/procsiab/sylius:v1.0-amd64
+podman run -d --name sylius-app-copy-files docker.io/procsiab/sylius:v1.2-amd64
 podman cp sylius-app-copy-files:/var/www/html/app/. app/
 podman rm -f sylius-app-copy-files
 # Copy the default locale and currency declaration to the project
