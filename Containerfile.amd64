@@ -1,12 +1,20 @@
 ARG PHP_VERSION=8.1.5
 FROM docker.io/amd64/php:${PHP_VERSION}-fpm-alpine3.15
 
-RUN apk --no-cache update && apk --no-cache add wget \
+RUN apk --no-cache update && apk --no-cache add --virtual .build-deps \
+    $PHPIZE_DEPS \
+    wget \
+    scanelf \
     zip \
     libzip-dev \
     libpng-dev \
+    libjpeg-turbo-dev \
+    libwebp-dev \
+    zlib-dev \
     icu-dev \
     pcre-dev \
+    freetype-dev \
+    mariadb-dev \
     gcc \
     musl-dev \
     make
@@ -16,18 +24,37 @@ COPY --from=docker.io/amd64/composer:2.3.5 /usr/bin/composer /usr/bin/composer
 COPY sylius.ini /usr/local/etc/php/conf.d/sylius.ini
 RUN mv "${PHP_INI_DIR}/php.ini-production" "${PHP_INI_DIR}/php.ini"
 
-# Create Symfony project
+# Install dependencies
 ARG APP_VERSION=1.11.4
 ARG SYMFONY_VERSION=5.4.8
+ARG APCU_VERSION=5.1.21
 RUN wget -q https://github.com/symfony-cli/symfony-cli/releases/download/v${SYMFONY_VERSION}/symfony-cli_${SYMFONY_VERSION}_x86_64.apk -O /tmp/symfony.apk && \
     apk add --allow-untrusted /tmp/symfony.apk && \
     rm -rf /tmp/symfony.apk && \
     docker-php-ext-configure intl && \
-    docker-php-ext-install exif zip gd intl fileinfo opcache pdo_mysql && \
-    composer create-project sylius/sylius=${APP_VERSION} app --no-interaction --no-scripts
+    docker-php-ext-configure gd --with-jpeg --with-webp --with-freetype && \
+    docker-php-ext-configure zip --with-zip && \
+    docker-php-ext-install exif zip gd intl pdo_mysql && \
+    pecl install apcu-${APCU_VERSION} && pecl clear-cache && \
+    docker-php-ext-enable apcu opcache
+
+RUN RUNTIME_DEPS="$( \
+    scanelf --needed --nobanner --format '%n#p' --recursive /usr/local/lib/php/extensions \
+    | tr ',' '\n' \
+    | sort -u \
+    | awk 'system("[ -e /usr/local/lib/" $1 " ]") == 0 { next } { print "so:" $1 }' \
+    )" && \
+    apk add --no-cache --virtual .sylius-phpexts-rundeps $RUNTIME_DEPS && \
+    apk del .build-deps
+
+# Create Symfony project
+ENV COMPOSER_ALLOW_SUPERUSER=1
+RUN composer create-project sylius/sylius=${APP_VERSION} app --no-interaction
 
 # Configure runtime
 COPY env.local.php /var/www/html/app/.env.local.php
 WORKDIR /var/www/html/app
-RUN symfony server:prod
+RUN composer install --no-interaction --no-scripts && \
+    symfony server:prod
+
 CMD ["symfony", "server:start"]
