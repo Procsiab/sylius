@@ -54,11 +54,20 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 RUN composer create-project sylius/sylius=${APP_VERSION} app --no-interaction
 
 # Configure runtime
-COPY env.local.php /var/www/html/app/.env.local.php
 WORKDIR /var/www/html/app
-RUN composer install --no-interaction --no-scripts && \
+COPY env.local.php ./.env.local.php
+RUN rm -rf composer.json symfony.lock .babelrc package.json gulpfile.babel.js yarn.lock && \
+    apk add wget && \
+    wget https://raw.githubusercontent.com/Sylius/Sylius/v${APP_VERSION}/symfony.lock && \
+    wget https://raw.githubusercontent.com/Sylius/Sylius/v${APP_VERSION}/composer.json && \
+    wget https://raw.githubusercontent.com/Sylius/Sylius/v${APP_VERSION}/.babelrc && \
+    wget https://raw.githubusercontent.com/Sylius/Sylius/v${APP_VERSION}/package.json && \
+    wget https://raw.githubusercontent.com/Sylius/Sylius/v${APP_VERSION}/gulpfile.babel.js && \
+    wget https://raw.githubusercontent.com/Sylius/Sylius/v${APP_VERSION}/yarn.lock && \
+    apk del wget
+# Install dependencies
+RUN composer install --prefer-dist --optimize-autoloader --no-interaction --no-scripts --no-progress && \
+    composer clear-cache && \
     symfony server:prod
-
-RUN rm -rf /usr/bin/qemu-aarch64-static
 
 CMD ["symfony", "server:start"]
