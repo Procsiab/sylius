@@ -14,11 +14,7 @@ Run the following command (you may replace `podman` with `docker`, if using the 
 podman build -f Containerfile.amd64 -t mycompany/sylius:latest .
 ```
 
-Ypu may choose the file `Containerfile.aarch64` to target the ARM64 architecture; in that case, the package `qemu-user-static` must be installed, and the following command ran before building the image:
-
-```bash
-cp $(which qemu-aarch64-static) .
-```
+You may choose the file `Containerfile.aarch64` to target the ARM64 architecture; in that case, the package `qemu-user-static` must be installed
 
 ## Run the environment
 
